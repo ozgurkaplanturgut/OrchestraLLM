@@ -60,9 +60,10 @@ OPENAI_BASE_URL="https://api.openai.com/v1"
 
 ### 2. Build and Run
 
-Start all services using Docker Compose. The images will be built on the first run.
+Start all services using Docker Compose. The images will be pulled on the first run.
 
 --> docker build -t orchestrallm:1.0 .
+
 --> docker compose up
 
 You can verify that the API is running by hitting the `/health` endpoint:
@@ -99,7 +100,7 @@ The project includes an end-to-end test script (`test.py`) that covers all major
 
     The script contains several test scenarios inside the `main()` function, which are commented out by default. To run a specific scenario, open `test.py` and uncomment the corresponding lines.
 
-    For example, to run only the **Chat** and **Recipe** tests, modify the `main()` function at the bottom of `test.py` as follows:
+    For example, to run only the **Chat** test, modify the `main()` function at the bottom of `test.py` as follows:
 
     ```python
     # test.py
