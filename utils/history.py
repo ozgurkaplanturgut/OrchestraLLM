@@ -1,0 +1,132 @@
+# utils/history.py
+"""
+Konuşma geçmişi yönetimi (MongoDB):
+- Tekil conversation dökümanı: { user_id, session_id, messages: [...] }
+- (user_id, session_id) üzerinde unique index
+- Mesaj ekleme: $setOnInsert (messages HARİÇ) + $push (upsert=True)
+- Yükleme: son N mesajı getirir
+"""
+
+from __future__ import annotations
+import time
+from typing import List, Dict, Optional
+
+from pymongo import MongoClient, ASCENDING, IndexModel
+from pymongo.collection import Collection
+from pymongo.errors import DuplicateKeyError
+from pymongo.errors import OperationFailure
+
+from utils.config import settings
+from utils.mongo import get_db
+
+MONGO_URI: str = getattr(settings, "MONGODB_URI", "mongodb://localhost:27017")
+MONGO_DB: str = getattr(settings, "MONGODB_DB", "ragchat")
+COLL_NAME: str = getattr(settings, "CONVERSATIONS_COLLECTION", "conversations")
+MAX_MESSAGES: int = int(getattr(settings, "HISTORY_MAX_MESSAGES", 200) or 200)
+
+_client: Optional[MongoClient] = None
+_coll: Optional[Collection] = None
+
+
+def _get_coll():
+    global _coll
+    if _coll is None:
+        _coll = get_db().get_collection("conversations")
+
+        # İndeksi adıyla hedefle; zaten varsa sorun çıkarma
+        try:
+            info = _coll.index_information()
+            if "conv_user_session" not in info:
+                _coll.create_indexes([
+                    IndexModel(
+                        [("user_id", ASCENDING), ("session_id", ASCENDING)],
+                        name="conv_user_session",
+                        unique=True,
+                    )
+                ])
+        except OperationFailure as e:
+            # 85: IndexOptionsConflict — "farklı isimle zaten var" gibi durumlarda sessiz geç
+            if e.code != 85:
+                raise
+    return _coll
+
+
+def _now_ts() -> float:
+    return time.time()
+
+
+def load_history(*, user_id: str, session_id: str, limit: int = 10) -> List[Dict[str, str]]:
+    """
+    Son 'limit' mesajı getirir. Dönüş: [{'role': 'user'|'assistant', 'content': '...'}, ...]
+    """
+    coll = _get_coll()
+    doc = coll.find_one(
+        {"user_id": user_id, "session_id": session_id},
+        {"_id": 0, "messages": {"$slice": -int(max(1, limit))}},
+    )
+    msgs = (doc or {}).get("messages", []) or []
+    out: List[Dict[str, str]] = []
+    for m in msgs:
+        role = m.get("role")
+        content = m.get("content")
+        if role and content:
+            out.append({"role": role, "content": content})
+    return out
+
+
+def append_message(*, user_id: str, session_id: str, role: str, content: str) -> None:
+    """
+    Conversation dökümanına yeni mesaj PUSH eder.
+    Döküman yoksa setOnInsert ile (messages HARIÇ) oluşturur, messages'ı PUSH yaratır.
+    """
+    coll = _get_coll()
+
+    msg_doc = {
+        "role": role,
+        "content": content,
+        "ts": _now_ts(),
+    }
+
+    try:
+        coll.update_one(
+            {"user_id": user_id, "session_id": session_id},
+            {
+                # Dikkat: BURADA 'messages' YOK!
+                "$setOnInsert": {
+                    "user_id": user_id,
+                    "session_id": session_id,
+                    "created_at": _now_ts(),
+                },
+                # messages array'ını oluşturup sınırlayan kısım
+                "$push": {
+                    "messages": {
+                        "$each": [msg_doc],
+                        "$slice": -int(MAX_MESSAGES),
+                    }
+                },
+                "$set": {
+                    "updated_at": _now_ts(),
+                },
+            },
+            upsert=True,
+        )
+    except DuplicateKeyError:
+        # Nadir yarış durumu: ikinci denemede sadece push yeter
+        coll.update_one(
+            {"user_id": user_id, "session_id": session_id},
+            {
+                "$push": {
+                    "messages": {
+                        "$each": [msg_doc],
+                        "$slice": -int(MAX_MESSAGES),
+                    }
+                },
+                "$set": {"updated_at": _now_ts()},
+            },
+            upsert=False,
+        )
+
+
+# Geriye dönük uyumluluk (eski kod load_recent_messages çağırıyorsa)
+def load_recent_messages(*, user_id: str, session_id: str, limit: int = 10):
+    return load_history(user_id=user_id, session_id=session_id, limit=limit)
