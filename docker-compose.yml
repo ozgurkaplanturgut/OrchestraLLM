@@ -1,0 +1,53 @@
+services:
+  api:
+    container_name: ragchat_api
+    image: orchestrallm:1.0
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      LOG_LEVEL: "warning"
+      BIND: "0.0.0.0:8076"
+      WEB_CONCURRENCY: "1"
+      THREADS: "1"
+      MONGO_URI: "mongodb://mongo:27017/ragchat"
+      QDRANT_URL: "http://qdrant:6333"
+    ports:
+      - "127.0.0.1:8076:8076"
+    depends_on:
+      mongo:
+        condition: service_started
+      qdrant:
+        condition: service_started
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    command: >
+      gunicorn -k uvicorn.workers.UvicornWorker
+               -b 0.0.0.0:8076
+               api_service:app
+               --workers 1
+               --threads 1
+
+
+  mongo:
+    image: mongo:6
+    container_name: ragchat_mongo
+    command: ["--bind_ip_all", "--quiet"]
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: ragchat_qdrant
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "127.0.0.1:6333:6333"
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  qdrant_data:
+  uploads_data:
