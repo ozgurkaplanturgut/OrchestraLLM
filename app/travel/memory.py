@@ -12,10 +12,8 @@ _META_KEYS = {"_id", "context", "user_id", "session_id", "updated_at"}
 
 def _normalize_state(state: Optional[Dict[str, Any]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Geriye dönük uyum:
-      - save_travel_state(user_id, session_id, state={...})
-      - save_travel_state(user_id, session_id, payload={...})
-      - save_travel_state(user_id, session_id, plan_text=..., final_text=..., ...)
+    This normalizes the state to be saved.
+    If state is None, it tries to extract from kwargs.
     """
     if state is None:
         if "payload" in kwargs and isinstance(kwargs["payload"], dict):
@@ -32,8 +30,7 @@ def _normalize_state(state: Optional[Dict[str, Any]], kwargs: Dict[str, Any]) ->
 
 def save_travel_state(user_id: str, session_id: str, state: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
     """
-    Son seyahat durumunu kaydeder (upsert).
-    Dönüş: kaydedilen alanlar (meta hariç).
+    This saves the travel state for the given user_id and session_id.
     """
     db = get_db()
     payload = _normalize_state(state, kwargs)
@@ -53,7 +50,7 @@ def save_travel_state(user_id: str, session_id: str, state: Optional[Dict[str, A
 
 def load_last_state(user_id: str, session_id: str) -> Dict[str, Any]:
     """
-    Son kaydedilen durumu getirir; meta alanları ayıklar.
+    This loads the last travel state for the given user_id and session_id.
     """
     db = get_db()
     doc = db.app_states.find_one({"context": _CONTEXT, "user_id": user_id, "session_id": session_id})

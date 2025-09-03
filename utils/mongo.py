@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional, List, Tuple, Union
+from typing import Any, Dict, Optional
 
 from pymongo import MongoClient, ASCENDING, ReturnDocument
-from pymongo.collection import Collection
 from pymongo.errors import OperationFailure
 from utils.config import settings
 
@@ -117,9 +116,3 @@ def save_stream_event(*args, **kwargs) -> Dict[str, Any]:
 
     db.streams.insert_one(ev)
     return ev
-
-# ---- Uyum amaçlı küçük yardımcı (history için dışarıdan çağrılabiliyor) ----
-
-def load_recent_messages(*, user_id: str, session_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-    from utils.history import load_recent_messages as _load_recent  # geç bağlama
-    return _load_recent(user_id=user_id, session_id=session_id, limit=limit)

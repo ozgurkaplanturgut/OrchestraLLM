@@ -1,10 +1,7 @@
 # tasks/chat_tasks.py
 """
-Basic chat (history-aware):
-- Geçmişi (user+session) çek
-- Kullanıcı mesajını geçmişe ekle
-- Geçmiş + yeni soru ile LLM'den stream yanıt al
-- Asistan cevabını geçmişe ekle
+This module handles chat tasks by managing conversation history and interacting with the OpenAI API.
+It streams responses back to the client in real-time.
 """
 import logging
 from typing import List, Dict

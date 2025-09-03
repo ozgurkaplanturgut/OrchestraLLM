@@ -1,18 +1,14 @@
-# full_async_test.py
 """
 End-to-end test script for the async API:
 - Chat (basic, memory in Mongo) with streaming
 - Ingest (download->chunk->embed->Qdrant)
 - RAG query over ingested doc with streaming
-- Optional: Delete document (if /v1/tasks/delete exists)
 - Travel planning (agno team) with streaming
 
 Requires:
   pip install requests websockets
 
 Default base_url: http://127.0.0.1:8076
-Default doc URL:  http://host.docker.internal:8000/holocrow_faq.pdf
-  (Linux/Compose'da host.docker.internal yoksa: --doc-url ile gerçek bir HTTP link ver)
 """
 import argparse
 import asyncio

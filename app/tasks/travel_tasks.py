@@ -1,8 +1,6 @@
 # app/tasks/travel_tasks.py
 """
-Travel task (stream) — Multi-Agent Collaboration + Session Memory.
-- Mevcut WS/async mimarisini bozmadan travel akışını güncelledi.
-- Writer stream tokenlarını WS'e gönderirken, bitince state persist edilir.
+This module defines a task for handling travel planning using multiple agents to research,
 """
 
 from utils.config import settings
@@ -25,13 +23,12 @@ async def run_travel_task(task_id: str, user_id: str, session_id: str, lang: str
         await send_status(task_id, "[travel] planlama başlatılıyor")
         await send_status(task_id, "[travel] yazım başlatılıyor (stream)")
 
-        # Writer aşaması stream: token'ları aynen WS'e bas
         async for tok in stream_travel_plan(
             user_id=user_id,
             session_id=session_id,
             query=query,
             language=lang,
-            context_id=task_id,  # bu task çalışmasının kimliği olarak da saklıyoruz
+            context_id=task_id,  
         ):
             if tok:
                 await send_token(task_id, tok)

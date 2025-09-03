@@ -1,6 +1,5 @@
 # utils/config.py
 """
-Uygulama yapılandırması (Celery/RabbitMQ YOK).
 Pydantic v2 + pydantic-settings.
 """
 

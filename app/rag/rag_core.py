@@ -1,6 +1,6 @@
 # app/rag/rag_core.py
 """
-RAG çekirdek: query embed -> Qdrant search (filter: user_id [+ document_id]) -> pasaj birleştir.
+This module provides core functionalities for Retrieval-Augmented Generation (RAG) using Qdrant as the vector database.
 """
 
 from typing import List, Dict, Any, Optional

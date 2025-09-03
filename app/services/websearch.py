@@ -70,7 +70,6 @@ def _expand_queries_minimal(prompt: str) -> List[str]:
     queries = [base]
     if _is_turkish(base):
         queries += [f"{base} tarifi", f"{base} tarifleri"]
-    # İngilizce varyasyonları da ekle (kaynak çeşitliliği için)
     queries += [f"{base} recipe", f"{base} recipes", f"how to make {base}"]
     seen: Set[str] = set()
     uniq: List[str] = []
@@ -154,11 +153,9 @@ def parse_recipe_from_text(text: str) -> Dict[str, List[str]]:
         return {"ingredients": [], "steps": []}
     ls = text.lower()
 
-    # Section headers
     ing_heads = ["malzemeler", "içindekiler", "ingredients"]
     step_heads = ["yapılışı", "hazırlanışı", "tarif", "adımlar", "instructions", "directions", "method"]
 
-    # Find nearest occurrence
     def find_section(start_words):
         idx = -1
         for w in start_words:
@@ -171,15 +168,12 @@ def parse_recipe_from_text(text: str) -> Dict[str, List[str]]:
     i_ing = find_section(ing_heads)
     i_step = find_section(step_heads)
 
-    # Extract blocks
     def block_from(i_start, i_end):
         if i_start == -1:
             return ""
         if i_end != -1 and i_end > i_start:
             return text[i_start:i_end]
-        return text[i_start:i_start + 4000]  # cap
-
-    # Determine order and blocks
+        return text[i_start:i_start + 4000]  
     if i_ing != -1 and (i_step == -1 or i_ing < i_step):
         ing_block = block_from(i_ing, i_step)
         step_block = block_from(i_step, -1)
@@ -190,7 +184,6 @@ def parse_recipe_from_text(text: str) -> Dict[str, List[str]]:
         ing_block = ""
         step_block = text[:2000]
 
-    # Itemize
     def bulletize(block: str) -> List[str]:
         if not block:
             return []
@@ -205,11 +198,9 @@ def parse_recipe_from_text(text: str) -> Dict[str, List[str]]:
                 items.append(re.sub(r"^[•\-*]\s*", "", ln))
             elif (len(ln.split()) <= 12 and any(ch.isdigit() for ch in ln)) or any(u in ln.lower() for u in ["gr", "ml", "kaşık", "cup", "tbsp", "tsp"]):
                 items.append(ln)
-        # Fallback: comma/semicolon split
         if not items:
             tokens = [t.strip() for t in re.split(r",|;|\u2022", block) if t.strip()]
             items = tokens[:12]
-        # Deduplicate while preserving order
         seen = set()
         uniq = []
         for it in items:
@@ -220,7 +211,6 @@ def parse_recipe_from_text(text: str) -> Dict[str, List[str]]:
 
     ingredients = bulletize(ing_block)
     steps = bulletize(step_block)
-    # If steps are too short, attempt sentence split
     if steps and all(len(x.split()) <= 5 for x in steps):
         sents = re.split(r"(?<=[.!?])\s+", step_block)
         steps = [s.strip() for s in sents if len(s.strip()) > 6][:10]

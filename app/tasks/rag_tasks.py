@@ -1,12 +1,6 @@
 # tasks/rag_tasks.py
 """
-RAG task (history-aware) + terminal logging:
-- (1) Konuşma geçmişini (user+session) yükle
-- (2) Sorguyu embed et
-- (3) Qdrant'tan top-k (user_id [+ document_id] filtresi) getir
-- (4) Geçmiş + bağlam ile Chat Completions stream
-- (5) Kullanıcı mesajını ve asistan cevabını geçmişe yaz
-- (6) Tüm PROMPT (system + history + context), soru ve yanıtı terminale bas
+This module defines a task for handling Retrieval-Augmented Generation (RAG) using Qdrant and OpenAI.
 """
 
 import logging
@@ -31,6 +25,9 @@ logger = logging.getLogger("rag")
 
 
 def _format_snippets(snippets: List[str]) -> str:
+    """
+    Format retrieved snippets into a single context text.
+    """
     if not snippets:
         return "(no retrieved snippets)"
     parts = []
@@ -41,6 +38,9 @@ def _format_snippets(snippets: List[str]) -> str:
 
 # OpenAI helpers
 async def _embed_query(text: str) -> List[float]:
+    """
+    Embed the query text using OpenAI embeddings API.
+    """
     headers = {
         "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
         "Content-Type": "application/json",
@@ -55,6 +55,9 @@ async def _embed_query(text: str) -> List[float]:
 
 # Qdrant helpers
 def _qdrant() -> QdrantClient:
+    """
+    Create and return a Qdrant client.
+    """
     # grpc kapalı; httpx client kullanımı ile uyumlu
     return QdrantClient(url=settings.QDRANT_URL, prefer_grpc=False)
 
@@ -85,15 +88,12 @@ async def run_rag_task(
         return
 
     try:
-        # 1) Konuşma geçmişini çek (son N mesaj)
         history_limit = getattr(settings, "HISTORY_MAX_TURNS", 10) or 10
         recent_msgs = load_history(user_id=user_id, session_id=session_id, limit=history_limit)
 
-        # 2) Sorguyu embed et
         await send_status(task_id, "Sorgu embed ediliyor...")
         q_vec = await _embed_query(query)
 
-        # 3) Qdrant araması (user_id [+ document_id] filtresi)
         await send_status(task_id, "Qdrant araması yapılıyor...")
         client = _qdrant()
         res = client.search(
@@ -106,28 +106,23 @@ async def run_rag_task(
         )
         snippets = [hit.payload.get("text", "") for hit in res]
 
-        # 4) Mesajları oluştur (SYSTEM + HISTORY + USER)
         context_text = _format_snippets(snippets)
         system_prompt = RAG_SYSTEM_PROMPT + "\n" + f"CONTEXT TEXT: {context_text}"
 
         messages: List[Dict[str, str]] = [{"role": "system", "content": system_prompt}]
-        # Konuşma geçmişini orijinal rolleriyle ekle
         for m in recent_msgs or []:
             role = m.get("role")
             content = m.get("content")
             if role in ("user", "assistant") and content:
                 messages.append({"role": role, "content": content})
 
-        # Şimdiki kullanıcı mesajı
         messages.append({"role": "user", "content": query})        
 
-        # 5) Önce kullanıcı mesajını geçmişe yaz (süreklilik için)
         try:
             append_message(user_id=user_id, session_id=session_id, role="user", content=query)
         except Exception as e:
             logger.warning(f"history append (user) failed: {e}")
 
-        # 6) Stream cevap + cevabı biriktir
         final_chunks: List[str] = []
         try:
             async for tok in stream_chat(messages):
@@ -142,19 +137,10 @@ async def run_rag_task(
 
         final_text = "".join(final_chunks).strip()
 
-        # 7) Asistan cevabını da geçmişe yaz
         try:
             append_message(user_id=user_id, session_id=session_id, role="assistant", content=final_text)
         except Exception as e:
             logger.warning(f"history append (assistant) failed: {e}")
-
-        # ---- TERMINAL LOG: RESPONSE (kapanış) ----
-        try:
-            print("# RESPONSE:")
-            print(final_text)
-            print("======= RAG END =======\n")
-        except Exception as e:
-            logger.warning(f"terminal response log failed: {e}")
 
         await send_done(task_id)
 

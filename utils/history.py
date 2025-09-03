@@ -1,11 +1,4 @@
 # utils/history.py
-"""
-Konuşma geçmişi yönetimi (MongoDB):
-- Tekil conversation dökümanı: { user_id, session_id, messages: [...] }
-- (user_id, session_id) üzerinde unique index
-- Mesaj ekleme: $setOnInsert (messages HARİÇ) + $push (upsert=True)
-- Yükleme: son N mesajı getirir
-"""
 
 from __future__ import annotations
 import time
@@ -33,7 +26,6 @@ def _get_coll():
     if _coll is None:
         _coll = get_db().get_collection("conversations")
 
-        # İndeksi adıyla hedefle; zaten varsa sorun çıkarma
         try:
             info = _coll.index_information()
             if "conv_user_session" not in info:
@@ -45,7 +37,6 @@ def _get_coll():
                     )
                 ])
         except OperationFailure as e:
-            # 85: IndexOptionsConflict — "farklı isimle zaten var" gibi durumlarda sessiz geç
             if e.code != 85:
                 raise
     return _coll
@@ -57,7 +48,7 @@ def _now_ts() -> float:
 
 def load_history(*, user_id: str, session_id: str, limit: int = 10) -> List[Dict[str, str]]:
     """
-    Son 'limit' mesajı getirir. Dönüş: [{'role': 'user'|'assistant', 'content': '...'}, ...]
+    This loads the last `limit` messages for the given user_id and session_id.
     """
     coll = _get_coll()
     doc = coll.find_one(
@@ -76,8 +67,7 @@ def load_history(*, user_id: str, session_id: str, limit: int = 10) -> List[Dict
 
 def append_message(*, user_id: str, session_id: str, role: str, content: str) -> None:
     """
-    Conversation dökümanına yeni mesaj PUSH eder.
-    Döküman yoksa setOnInsert ile (messages HARIÇ) oluşturur, messages'ı PUSH yaratır.
+    This appends a message to the conversation history for the given user_id and session_id.
     """
     coll = _get_coll()
 
@@ -91,13 +81,11 @@ def append_message(*, user_id: str, session_id: str, role: str, content: str) ->
         coll.update_one(
             {"user_id": user_id, "session_id": session_id},
             {
-                # Dikkat: BURADA 'messages' YOK!
                 "$setOnInsert": {
                     "user_id": user_id,
                     "session_id": session_id,
                     "created_at": _now_ts(),
                 },
-                # messages array'ını oluşturup sınırlayan kısım
                 "$push": {
                     "messages": {
                         "$each": [msg_doc],
@@ -111,7 +99,6 @@ def append_message(*, user_id: str, session_id: str, role: str, content: str) ->
             upsert=True,
         )
     except DuplicateKeyError:
-        # Nadir yarış durumu: ikinci denemede sadece push yeter
         coll.update_one(
             {"user_id": user_id, "session_id": session_id},
             {
@@ -125,8 +112,3 @@ def append_message(*, user_id: str, session_id: str, role: str, content: str) ->
             },
             upsert=False,
         )
-
-
-# Geriye dönük uyumluluk (eski kod load_recent_messages çağırıyorsa)
-def load_recent_messages(*, user_id: str, session_id: str, limit: int = 10):
-    return load_history(user_id=user_id, session_id=session_id, limit=limit)

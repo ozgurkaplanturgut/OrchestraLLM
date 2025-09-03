@@ -6,10 +6,6 @@ from typing import Any, Dict, List
 
 from utils.mongo import save_stream_event
 
-# ---------------------------
-# In-proc Event Bus (WS için)
-# ---------------------------
-
 class InProcEventBus:
     def __init__(self) -> None:
         self._subs: Dict[str, List[asyncio.Queue]] = {}
@@ -39,27 +35,16 @@ class InProcEventBus:
             try:
                 q.put_nowait(ev)
             except asyncio.QueueFull:
-                # aşırı yoğunlukta sessizce düşür
                 pass
 
 EVENT_BUS = InProcEventBus()
 
-# ---------------------------
-# Normalizasyon & Yayın
-# ---------------------------
 
 def _normalize_event_shape(event: Any) -> Dict[str, Any]:
-    """
-    Her yerde aynı imzayı destekle:
-      - dict event
-      - yanlış anahtarlar: typ/event/name -> type
-      - type yoksa: content varsa 'token', message varsa 'status', aksi halde 'info'
-    """
     if not isinstance(event, dict):
         return {"type": "info", "message": str(event)}
 
-    ev = dict(event)  # kopya
-    # type alias'ları toparla
+    ev = dict(event)  
     if "type" not in ev:
         if "typ" in ev:
             ev["type"] = ev.pop("typ")
@@ -68,7 +53,6 @@ def _normalize_event_shape(event: Any) -> Dict[str, Any]:
         elif "name" in ev:
             ev["type"] = ev.pop("name")
 
-    # hâlâ yoksa sezgisel belirle
     if "type" not in ev:
         if "content" in ev:
             ev["type"] = "token"
@@ -80,21 +64,15 @@ def _normalize_event_shape(event: Any) -> Dict[str, Any]:
     return ev
 
 async def publish_event_async(event: Any) -> Dict[str, Any]:
-    """
-    Event'i normalize et → Mongo'ya yaz (seq/created_at eklenir) → in-proc bus'a yayınla.
-    """
     ev = _normalize_event_shape(event)
 
     if "task_id" not in ev or not ev["task_id"]:
         raise ValueError("publish_event_async: 'task_id' zorunludur.")
 
-    saved = save_stream_event(ev)   # seq/created_at otomatik
-    await EVENT_BUS.publish(saved)  # WS abonelerine gönder
+    saved = save_stream_event(ev)  
+    await EVENT_BUS.publish(saved)  
     return saved
 
-# ---------------------------
-# Yardımcılar (tavsiye edilen API)
-# ---------------------------
 
 async def send_status(task_id: str, message: str) -> Dict[str, Any]:
     return await publish_event_async({"task_id": task_id, "type": "status", "message": message})

@@ -6,7 +6,7 @@ from typing import AsyncGenerator, Dict, List
 from app.services.openai_client import stream_chat
 from app.services.websearch import ddg_search
 from app.travel.memory import load_last_state, save_travel_state
-from utils.mongo import load_recent_messages
+from utils.history import load_history
 from utils.prompts import (TRAVEL_PLANNER_SYSTEM_PROMPT, 
                            TRAVEL_SEARCHER_SYSTEM_PROMPT,  
                            TRAVEL_WRITER_SYSTEM_PROMPT)
@@ -53,7 +53,7 @@ async def stream_travel_plan(
     This function coordinates multiple agents to research, plan, and write a travel itinerary.
     It streams the final written itinerary back as tokens.
     """
-    history_msgs = load_recent_messages(user_id=user_id, session_id=session_id, limit=10)
+    history_msgs = load_history(user_id=user_id, session_id=session_id, limit=10)
     history_text = "\n".join([f"- {m.get('role','')}: {str(m.get('content',''))[:200]}" for m in history_msgs])
 
     # Son durum

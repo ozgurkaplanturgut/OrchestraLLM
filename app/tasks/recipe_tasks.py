@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from app.services.websearch import search_and_extract_recipe, parse_recipe_from_text
 from app.services.openai_client import stream_chat, complete_chat
