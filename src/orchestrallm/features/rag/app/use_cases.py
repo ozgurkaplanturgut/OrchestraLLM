@@ -1,4 +1,3 @@
-# tasks/rag_tasks.py
 """
 This module defines a task for handling Retrieval-Augmented Generation (RAG) using Qdrant and OpenAI.
 """
@@ -13,12 +12,11 @@ from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 from orchestrallm.shared.config.settings import settings
 from orchestrallm.shared.eventbus.events import send_token, send_error, send_done, send_status
-from orchestrallm.shared.history import load_history, append_message  # chat ile aynı API varsayımı
+from orchestrallm.shared.history import load_history, append_message 
 from orchestrallm.features.rag.domain.prompts import RAG_SYSTEM_PROMPT
 
 from orchestrallm.shared.llm.openai_client import stream_chat
 
-# Runtime logger (uyarı/hata için)
 _LOG_LEVEL = getattr(settings, "LOG_LEVEL", "INFO")
 logging.basicConfig(level=getattr(logging, _LOG_LEVEL.upper(), logging.INFO))
 logger = logging.getLogger("rag")
@@ -36,7 +34,6 @@ def _format_snippets(snippets: List[str]) -> str:
     return "\n\n".join(parts)
 
 
-# OpenAI helpers
 async def _embed_query(text: str) -> List[float]:
     """
     Embed the query text using OpenAI embeddings API.
@@ -53,12 +50,10 @@ async def _embed_query(text: str) -> List[float]:
         return j["data"][0]["embedding"]
 
 
-# Qdrant helpers
 def _qdrant() -> QdrantClient:
     """
     Create and return a Qdrant client.
     """
-    # grpc kapalı; httpx client kullanımı ile uyumlu
     return QdrantClient(url=settings.QDRANT_URL, prefer_grpc=False)
 
 
@@ -69,7 +64,6 @@ def _build_filter(user_id: str, related_document_id: Optional[str]) -> Filter:
     return Filter(must=must)
 
 
-# Main task
 async def run_rag_task(
     task_id: str,
     user_id: str,

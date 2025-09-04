@@ -1,4 +1,3 @@
-# app/rag/rag_core.py
 """
 This module provides core functionalities for Retrieval-Augmented Generation (RAG) using Qdrant as the vector database.
 """

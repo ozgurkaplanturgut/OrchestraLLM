@@ -1,4 +1,3 @@
-# app/tasks/ingest_tasks.py
 from __future__ import annotations
 
 import asyncio

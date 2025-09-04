@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Any, Dict, List, Set
-import re
 from orchestrallm.shared.websearch.ddg import ddg_search
 from orchestrallm.shared.web.fetch import fetch_text
 

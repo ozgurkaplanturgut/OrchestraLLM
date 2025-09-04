@@ -19,14 +19,12 @@ async def stream_ws(ws: WebSocket, task_id: str, from_seq: Optional[int] = Query
     db = get_db()
     last_seq = int(from_seq) if from_seq is not None else 0
 
-    # 1) backfill
     for ev in db.streams.find({"task_id": task_id, "seq": {"$gt": last_seq}}).sort("seq", 1):
         s = int(ev.get("seq", 0))
         if s > last_seq:
             last_seq = s
             await _ws_send_json(ws, ev)
 
-    # 2) canlı event'ler
     q = await EVENT_BUS.subscribe(task_id)
 
     async def pump_bus():

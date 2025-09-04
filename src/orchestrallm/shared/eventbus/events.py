@@ -1,10 +1,9 @@
-# utils/events.py
 from __future__ import annotations
 
 import asyncio
 from typing import Any, Dict, List
 
-from utils.mongo import save_stream_event
+from orchestrallm.shared.persistence.mongo import save_stream_event
 
 class InProcEventBus:
     def __init__(self) -> None:

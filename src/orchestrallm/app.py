@@ -4,12 +4,10 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# bunlar taşınan modüllerin yeni yolları
 from orchestrallm.shared.config.settings import settings
 from orchestrallm.shared.logging.logger import setup_logging
 from orchestrallm.shared.persistence.mongo import ensure_indexes
 
-# Routers
 from orchestrallm.shared.api.health import router as health_router
 from orchestrallm.shared.eventbus.api import router as stream_router
 from orchestrallm.features.chat.api.routes import router as chat_router
@@ -60,7 +58,6 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def _on_startup():
-        # yoksa no-op yap: ensure_indexes içeride boş dönebilir
         try:
             ensure_indexes()
         except Exception:

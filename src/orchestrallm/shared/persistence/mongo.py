@@ -1,4 +1,3 @@
-# utils/mongo.py
 from __future__ import annotations
 
 import time
@@ -48,7 +47,6 @@ def ensure_indexes() -> None:
                 name="state_ctx_user_session"
             )
     except OperationFailure:
-        # indeks var ise sorun değil
         pass
 
 def _next_sequence_for_task(task_id: str) -> int:
@@ -69,24 +67,19 @@ def _normalize_event_args(*args, **kwargs) -> Dict[str, Any]:
 
     DÖNEN dict en az {task_id, type} içerir; kwargs event’e eklenir.
     """
-    # Yeni imza: tek argüman dict
     if len(args) == 1 and isinstance(args[0], dict):
-        ev = dict(args[0])  # kopya
-        # Eski kod 'typ' anahtarı ile göndermiş olabilir → 'type'a çevir
+        ev = dict(args[0])  
         if "type" not in ev and "typ" in ev:
             ev["type"] = ev.pop("typ")
         return ev
 
-    # Eski imza: (task_id, typ, **fields)
     if len(args) >= 2 and isinstance(args[0], str) and isinstance(args[1], str):
         task_id: str = args[0]
         typ: str = args[1]
         ev: Dict[str, Any] = {"task_id": task_id, "type": typ}
-        # args[2:] için bir şey beklemiyoruz; tüm ekstra alanlar kwargs ile gelmeli
         ev.update(kwargs or {})
         return ev
 
-    # Beklenmedik durum: yine de kwargs’tan üretmeye çalış
     if "task_id" in kwargs and ("type" in kwargs or "typ" in kwargs):
         ev = dict(kwargs)
         if "type" not in ev and "typ" in ev:

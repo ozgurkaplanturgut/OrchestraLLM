@@ -1,5 +1,3 @@
-# utils/history.py
-
 from __future__ import annotations
 import time
 from typing import List, Dict, Optional
@@ -9,8 +7,8 @@ from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError
 from pymongo.errors import OperationFailure
 
-from utils.config import settings
-from utils.mongo import get_db
+from orchestrallm.shared.config.settings import settings
+from orchestrallm.shared.persistence.mongo import get_db
 
 MONGO_URI: str = getattr(settings, "MONGODB_URI", "mongodb://localhost:27017")
 MONGO_DB: str = getattr(settings, "MONGODB_DB", "ragchat")

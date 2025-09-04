@@ -1,4 +1,3 @@
-# app/data/ingestion.py
 import os
 import uuid
 from typing import List
@@ -13,7 +12,6 @@ def read_text(file_path: str) -> str:
     if name.endswith(".pdf"):
         reader = PdfReader(file_path)
         return "\n".join(page.extract_text() or "" for page in reader.pages)
-    # düz metin varsay
     with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read()
 

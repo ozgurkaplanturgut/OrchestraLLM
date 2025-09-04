@@ -1,4 +1,3 @@
-# app/services/openai_client.py
 from __future__ import annotations
 
 import json
@@ -8,8 +7,8 @@ from typing import AsyncGenerator, Dict, List, Optional, Sequence
 
 import httpx
 
-from utils.config import settings
-from utils.concurrency import LLM_STREAM_SEMAPHORE
+from orchestrallm.shared.config.settings import settings
+from orchestrallm.shared.concurrency import LLM_STREAM_SEMAPHORE
 
 log = logging.getLogger("openai")
 

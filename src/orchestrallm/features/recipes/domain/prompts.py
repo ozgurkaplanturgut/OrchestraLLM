@@ -1,4 +1,3 @@
-# src/orchestrallm/features/recipes/domain/prompts.py
 
 RECIPE_RECOMMENDER_PROMPT = """
 GOAL: Suggest EXACTLY 3 dishes that match the user's request.

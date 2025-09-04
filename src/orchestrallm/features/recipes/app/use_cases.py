@@ -1,4 +1,3 @@
-# app/tasks/recipe_tasks.py
 from __future__ import annotations
 
 import asyncio
@@ -139,7 +138,6 @@ async def run_recipe_task(task_id: str, user_id: str, session_id: str, prompt: s
             error_prefix = "Error"
 
         await send_status(task_id, status_generating)
-        # 🔑 Artık sadece `prompt` gönderiyoruz
         dishes = await _recommend_dishes(prompt, lang)
         if not dishes:
             dishes = [prompt]  # fallback
@@ -161,17 +159,14 @@ async def run_recipe_task(task_id: str, user_id: str, session_id: str, prompt: s
                 "recipe": recipe
             })
 
-        # İlk geri bildirim (outline)
         outline = _compose_outline(enriched, lang)
         for ch in outline:
             await send_token(task_id, ch)
             await asyncio.sleep(0.0005)
 
-        # Daha sonra LLM ile detaylı anlatımı stream et
         async for tok in _stream_story(enriched, lang):
             await send_token(task_id, tok)
 
-        # History: assistant
         append_message(user_id=user_id, session_id=session_id, role="assistant", content=outline)
 
         await send_done(task_id)

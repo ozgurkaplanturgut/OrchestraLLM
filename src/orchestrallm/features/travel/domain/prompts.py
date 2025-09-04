@@ -1,5 +1,3 @@
-# features/travel/domain/prompts.py
-
 TRAVEL_PLANNER_SYSTEM_PROMPT = """
 ROLE
 You are an expert travel planner and local insider who optimizes for realism, flow, and joy.

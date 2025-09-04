@@ -1,5 +1,3 @@
-# app/tasks/travel_tasks.py
-
 from orchestrallm.shared.config.settings import settings
 from orchestrallm.shared.eventbus.events import (
     send_token,

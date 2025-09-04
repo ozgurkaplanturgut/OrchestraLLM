@@ -1,4 +1,3 @@
-# utils/config.py
 """
 Pydantic v2 + pydantic-settings.
 """
