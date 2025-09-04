@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 from typing import AsyncGenerator, Dict, List
 
-from app.services.openai_client import stream_chat
-from app.services.websearch import ddg_search
-from app.travel.memory import load_last_state, save_travel_state
-from utils.history import load_history
-from utils.prompts import (TRAVEL_PLANNER_SYSTEM_PROMPT, 
+from orchestrallm.shared.llm.openai_client import stream_chat
+from orchestrallm.shared.websearch.ddg import ddg_search
+from orchestrallm.features.travel.infra.memory import load_last_state, save_travel_state
+from orchestrallm.shared.history import load_history
+from orchestrallm.features.travel.domain.prompts import (TRAVEL_PLANNER_SYSTEM_PROMPT, 
                            TRAVEL_SEARCHER_SYSTEM_PROMPT,  
                            TRAVEL_WRITER_SYSTEM_PROMPT)
 
@@ -46,7 +46,6 @@ async def stream_travel_plan(
     user_id: str,
     session_id: str,
     query: str,
-    language: str,
     context_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """
@@ -56,13 +55,11 @@ async def stream_travel_plan(
     history_msgs = load_history(user_id=user_id, session_id=session_id, limit=10)
     history_text = "\n".join([f"- {m.get('role','')}: {str(m.get('content',''))[:200]}" for m in history_msgs])
 
-    # Son durum
     last_state = load_last_state(user_id=user_id, session_id=session_id) or {}
     current_plan_text = last_state.get("plan_text", "") or ""
     current_final_text = last_state.get("final_text", "") or ""
     has_current = bool(current_plan_text or current_final_text)
 
-    # Web arama (hafif)
     results = ddg_search(query, max_results=6)
     search_json = json.dumps(results, ensure_ascii=False, indent=2)
 
@@ -84,13 +81,12 @@ async def stream_travel_plan(
     )
     plan_text = await _collect_stream(_mk_msgs(TRAVEL_PLANNER_SYSTEM_PROMPT, planner_user), temperature=0.2)
 
-    # --- Writer (stream) ---
     writer_user = _as_str(
         f"USER DEMAND: {query}\n\n"
-        f"USER LANGUAGE: {language}\n\n"
         f"[CURRENT PLAN]\n{current_plan_text if has_current else '(yok)'}\n\n"
         f"[NEW PLAN EXAMPLE]\n{plan_text}\n\n"
         f"[DETAILED RESEARCH RESULT]\n{research_text}"
+        f"[IMPORTANT NOTE: Always respond in the same language as the USER DEMAND.]"
     )
 
     final_buf: List[str] = []
