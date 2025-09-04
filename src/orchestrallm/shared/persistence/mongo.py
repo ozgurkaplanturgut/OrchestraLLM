@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 from pymongo import MongoClient, ASCENDING, ReturnDocument
 from pymongo.errors import OperationFailure
-from utils.config import settings
+from orchestrallm.shared.config.settings import settings
 
 _client: Optional[MongoClient] = None
 _db = None
