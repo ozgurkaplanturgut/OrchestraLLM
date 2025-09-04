@@ -21,4 +21,4 @@ ddgs==9.5.1
 autogen-core==0.4.7
 autogen-ext[openai]==0.4.7
 trafilatura==1.8.0
-bs4
+bs4==0.0.1
