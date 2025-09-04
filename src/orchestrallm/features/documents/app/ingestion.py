@@ -3,7 +3,7 @@ import os
 import uuid
 from typing import List
 from pypdf import PdfReader
-from utils.config import settings
+from orchestrallm.shared.config.settings import settings
 
 def read_text(file_path: str) -> str:
     """
