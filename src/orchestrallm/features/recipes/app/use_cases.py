@@ -6,12 +6,11 @@ import json
 import re
 from typing import Any, Dict, List
 
-from app.services.websearch import search_and_extract_recipe, parse_recipe_from_text
-from app.services.openai_client import stream_chat, complete_chat
-
-from utils.events import send_status, send_token, send_error, send_done
-from utils.history import append_message
-from utils.prompts import RECIPE_RECOMMENDER_PROMPT, RECIPE_WRITER_PROMPT
+from orchestrallm.features.recipes.infra.recipes_web import search_and_extract_recipe, parse_recipe_from_text
+from orchestrallm.shared.llm.openai_client import stream_chat, complete_chat
+from orchestrallm.shared.eventbus.events import send_status, send_token, send_error, send_done
+from orchestrallm.shared.history import append_message
+from orchestrallm.features.recipes.domain.prompts import RECIPE_RECOMMENDER_PROMPT, RECIPE_WRITER_PROMPT
 
 _RE_JSON = re.compile(r'\{(?:[^{}]|\{[^{}]*\})*\}')
 

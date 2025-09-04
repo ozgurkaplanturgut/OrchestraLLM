@@ -7,12 +7,12 @@ import logging
 from typing import List, Dict
 
 import httpx
-from utils.config import settings
-from utils.events import send_token, send_error, send_done, send_status
-from utils.history import load_history, append_message  # alias ile eski isim de çalışır
-from app.services.openai_client import stream_chat
+from orchestrallm.shared.config.settings import settings
+from orchestrallm.shared.eventbus.events import send_token, send_error, send_done, send_status
+from orchestrallm.shared.history import load_history, append_message  # alias ile eski isim de çalışır
+from orchestrallm.shared.llm.openai_client import stream_chat
 
-from utils.prompts import BASIC_CHATBOT_PROMPT
+from orchestrallm.features.chat.domain.prompts import BASIC_CHATBOT_PROMPT
 
 # Logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))

@@ -11,12 +11,12 @@ import httpx
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
-from utils.config import settings
-from utils.events import send_token, send_error, send_done, send_status
-from utils.history import load_history, append_message  # chat ile aynı API varsayımı
-from utils.prompts import RAG_SYSTEM_PROMPT
+from orchestrallm.shared.config.settings import settings
+from orchestrallm.shared.eventbus.events import send_token, send_error, send_done, send_status
+from orchestrallm.shared.history import load_history, append_message  # chat ile aynı API varsayımı
+from orchestrallm.features.rag.domain.prompts import RAG_SYSTEM_PROMPT
 
-from app.services.openai_client import stream_chat
+from orchestrallm.shared.llm.openai_client import stream_chat
 
 # Runtime logger (uyarı/hata için)
 _LOG_LEVEL = getattr(settings, "LOG_LEVEL", "INFO")

@@ -12,11 +12,11 @@ import httpx
 from pypdf import PdfReader
 from qdrant_client import QdrantClient
 
-from utils.config import settings
-from utils.events import send_status, send_error, send_done
-from utils.qdrant_util import ensure_collection, upsert_points
-from utils.chunking import chunk_text
-from app.services.openai_client import embed_texts_sync
+from orchestrallm.shared.config.settings import settings
+from orchestrallm.shared.eventbus.events import send_status, send_error, send_done
+from orchestrallm.shared.llm.openai_client import embed_texts_sync
+from orchestrallm.features.rag.infra.qdrant_util import ensure_collection, upsert_points
+from orchestrallm.features.documents.domain.chunking import chunk_text
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ async def run_ingest_task(
             return
 
         await send_status(task_id, "Embedding hesaplanıyor...")
-        vectors = embed_texts_sync(chunks)
+        vectors = await asyncio.to_thread(embed_texts_sync, chunks)
 
         await send_status(task_id, "Qdrant'a yazılıyor...")
         qc = QdrantClient(url=settings.QDRANT_URL, api_key=getattr(settings, "QDRANT_API_KEY", None))
