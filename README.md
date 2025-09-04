@@ -88,11 +88,11 @@ All tasks run asynchronously and return a `task_id`. To monitor the results, you
 
 ## Running the E2E Test Script
 
-The project includes an end-to-end test script (`test.py`) that covers all major features.
+The project includes an end-to-end test script (`test_project.py`) that covers all major features.
 
 1.  **Install the required Python packages:**
 
-    ```sh
+    ```
     pip install requests websockets
     ```
 
@@ -143,18 +143,32 @@ The project includes an end-to-end test script (`test.py`) that covers all major
 
 ```
 .
-├── app/                  # Main application logic
-│   ├── data/             # Data processing (ingestion, chunking)
-│   ├── rag/              # RAG core logic
-│   ├── services/         # External service clients (OpenAI, Web Search)
-│   ├── tasks/            # Asynchronous task logic (chat, ingest, rag, etc.)
-│   └── travel/           # Travel agent logic
-├── utils/                # Utility modules (config, db, events, etc.)
-├── api_service.py        # FastAPI application and endpoint definitions
-├── test.py               # E2E test script
-├── Dockerfile            # Docker image definition for the API service
-├── docker-compose.yml    # Service definitions (api, mongo, qdrant)
-├── gunicorn.conf.py      # Gunicorn configuration
-├── requirements.txt      # Python dependencies
-└── README.md             # This file
+├── src/orchestrallm/
+│   ├── app.py                  # FastAPI application entrypoint and router setup
+│   │
+│   ├── features/               # Contains individual, self-contained features
+│   │   ├── chat/               # Chat feature logic
+│   │   ├── documents/          # Document ingestion feature
+│   │   ├── rag/                # RAG feature
+│   │   ├── recipes/            # Recipe finder feature
+│   │   └── travel/             # Travel planner feature
+│   │       ├── api/            # FastAPI routes and schemas for the feature
+│   │       ├── app/            # Core application logic and use cases
+│   │       ├── domain/         # Business logic, prompts, and domain models
+│   │       └── infra/          # Infrastructure-specific code (e.g., DB access)
+│   │
+│   └── shared/                 # Code shared across all features
+│       ├── api/                # Shared API components (e.g., health check)
+│       ├── config/             # Application settings (Pydantic)
+│       ├── eventbus/           # Real-time event bus and WebSocket API
+│       ├── llm/                # Clients for interacting with LLMs (e.g., OpenAI)
+│       ├── persistence/        # Database connection and access logic (MongoDB)
+│       ├── web/                # Web fetching utilities
+│       └── websearch/          # Web search service clients (e.g., DuckDuckGo)
+│
+├── test_project.py             # End-to-end test script
+├── Dockerfile                  # Docker image definition for the API service
+├── docker-compose.yml          # Service definitions (api, mongo, qdrant)
+├── gunicorn.conf.py            # Gunicorn configuration
+└── requirements.txt            # Python dependencies
 ```
