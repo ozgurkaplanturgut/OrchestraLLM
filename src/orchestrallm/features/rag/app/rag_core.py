@@ -6,9 +6,9 @@ This module provides core functionalities for Retrieval-Augmented Generation (RA
 from typing import List, Dict, Any, Optional
 
 from qdrant_client import QdrantClient
-from utils.config import settings
-from utils.qdrant_util import ensure_collection, search
-from app.services.openai_client import embed_query_sync
+from orchestrallm.shared.config.settings import settings
+from orchestrallm.features.rag.infra.qdrant_util import ensure_collection, search
+from orchestrallm.shared.llm.openai_client import embed_query_sync
 
 
 def retrieve_passages(
