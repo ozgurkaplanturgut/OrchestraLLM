@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qm
 
-from utils.id_utils import make_point_uuid
+from orchestrallm.shared.utils.id_utils import make_point_uuid
 
 def ensure_collection(client: QdrantClient, name: str, vector_size: int) -> None:
     try:
