@@ -5,7 +5,7 @@ services:
     env_file:
       - .env
     environment:
-      PYTHONPATH: /app
+      PYTHONPATH: /app/src  
       LOG_LEVEL: "warning"
       BIND: "0.0.0.0:8076"
       WEB_CONCURRENCY: "1"
@@ -25,7 +25,7 @@ services:
     command: >
       gunicorn -k uvicorn.workers.UvicornWorker
                -b 0.0.0.0:8076
-               api_service:app
+               orchestrallm.app:app         
                --workers 1
                --threads 1
 
