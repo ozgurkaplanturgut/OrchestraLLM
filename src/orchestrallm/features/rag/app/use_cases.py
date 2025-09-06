@@ -78,17 +78,17 @@ async def run_rag_task(
     back to the client in real-time.
     """
     if not settings.OPENAI_API_KEY:
-        await send_error(task_id, "OPENAI_API_KEY tanımlı değil.")
+        await send_error(task_id, "OPENAI_API_KEY is not defined.")
         return
 
     try:
         history_limit = getattr(settings, "HISTORY_MAX_TURNS", 10) or 10
         recent_msgs = load_history(user_id=user_id, session_id=session_id, limit=history_limit)
 
-        await send_status(task_id, "Sorgu embed ediliyor...")
+        await send_status(task_id, "Query is being embedded...")
         q_vec = await _embed_query(query)
 
-        await send_status(task_id, "Qdrant araması yapılıyor...")
+        await send_status(task_id, "Qdrant search is being performed...")
         client = _qdrant()
         res = client.search(
             collection_name=settings.QDRANT_COLLECTION,
@@ -123,7 +123,7 @@ async def run_rag_task(
                 final_chunks.append(tok)
                 await send_token(task_id, tok)
         except httpx.HTTPError as e:
-            await send_error(task_id, f"OpenAI HTTP hatası: {e}")
+            await send_error(task_id, f"OpenAI HTTP error: {e}")
             return
         except Exception as e:
             await send_error(task_id, f"Hata: {e}")
@@ -140,4 +140,4 @@ async def run_rag_task(
 
     except Exception as e:
         logger.exception("RAG task error")
-        await send_error(task_id, f"RAG task hata: {e}")
+        await send_error(task_id, f"RAG task error: {e}")

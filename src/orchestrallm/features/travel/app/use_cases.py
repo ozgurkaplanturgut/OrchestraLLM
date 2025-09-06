@@ -17,20 +17,15 @@ async def run_travel_task(
     """
     Handle a travel planning task by coordinating agents.
     Streams tokens to the client in real-time.
-
-    NOT:
-    - 'lang' None/'auto'/'tr'/'en'/'Turkish'/'English' olabilir.
-      Nihai dil tespiti ve LANGUAGE POLICY enjektesi agno_team.stream_travel_plan
-      içinde güvenli şekilde yapılıyor.
     """
     if not getattr(settings, "OPENAI_API_KEY", None):
         await send_error(task_id, "OPENAI_API_KEY tanımlı değil.")
         return
 
     try:
-        await send_status(task_id, "[travel] araştırma başlatılıyor")
-        await send_status(task_id, "[travel] planlama başlatılıyor")
-        await send_status(task_id, "[travel] yazım başlatılıyor (stream)")
+        await send_status(task_id, "[travel] searching is being initiated")
+        await send_status(task_id, "[travel] planning is being initiated")
+        await send_status(task_id, "[travel] writing is being initiated")
 
         async for tok in stream_travel_plan(
             user_id=user_id,

@@ -28,7 +28,7 @@ async def run_chat_task(task_id: str, user_id: str, session_id: str, query: str)
         return
 
     try:
-        await send_status(task_id, "Geçmiş yükleniyor...")
+        await send_status(task_id, "History is being loaded...")
         history_limit = getattr(settings, "HISTORY_MAX_TURNS", 10) or 10
         recent = load_history(user_id=user_id, session_id=session_id, limit=history_limit)
 

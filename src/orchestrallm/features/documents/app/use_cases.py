@@ -20,16 +20,19 @@ from orchestrallm.features.documents.domain.chunking import chunk_text
 logger = logging.getLogger(__name__)
 
 DOWNLOAD_TIMEOUT_S = 60
-HEARTBEAT_EVERY_S  = 15
+HEARTBEAT_EVERY_S = 15
+
 
 def _is_pdf_url(u: str) -> bool:
     return urlparse(u).path.lower().endswith(".pdf")
+
 
 async def _download_bytes(url: str, timeout: int = DOWNLOAD_TIMEOUT_S) -> bytes:
     async with httpx.AsyncClient(timeout=timeout) as client:
         r = await client.get(url)
         r.raise_for_status()
         return r.content
+
 
 def _bytes_to_text(b: bytes, pdf: bool) -> str:
     if pdf:
@@ -40,13 +43,15 @@ def _bytes_to_text(b: bytes, pdf: bool) -> str:
     except Exception:
         return b.decode("latin-1", errors="ignore")
 
+
 async def _heartbeat(task_id: str, label: str):
     while True:
         await asyncio.sleep(HEARTBEAT_EVERY_S)
         try:
-            await send_status(task_id, f"[heartbeat] {label} çalışıyor...")
+            await send_status(task_id, f"[heartbeat] {label} running...")
         except Exception:
             return
+
 
 async def run_ingest_task(
     task_id: str,
@@ -57,45 +62,51 @@ async def run_ingest_task(
     overlap: int = 150,
 ):
     """
-    This function handles the ingestion of a document by downloading it, converting it to text,
-    chunking the text, generating embeddings, and storing them in a Qdrant vector database
+    Orchestrates the ingestion of a document:
+      - Downloads it
+      - Converts it to text
+      - Splits into chunks
+      - Generates embeddings
+      - Stores vectors in Qdrant
     """
     if not settings.OPENAI_API_KEY:
-        await send_error(task_id, "OPENAI_API_KEY tanımlı değil.")
+        await send_error(task_id, "OPENAI_API_KEY is not defined.")
         return
 
     hb = asyncio.create_task(_heartbeat(task_id, "ingest"))
     try:
-        await send_status(task_id, "İndiriliyor...")
+        await send_status(task_id, "Downloading...")
         raw = await _download_bytes(document_url)
 
-        await send_status(task_id, "Metne dönüştürülüyor...")
+        await send_status(task_id, "Converting to text...")
         text = _bytes_to_text(raw, _is_pdf_url(document_url))
 
-        await send_status(task_id, "Chunk’lanıyor...")
+        await send_status(task_id, "Splitting into chunks...")
         chunks = chunk_text(text, max_chars=max_chars, overlap=overlap)
         if not chunks:
-            await send_error(task_id, "Boş içerik.")
+            await send_error(task_id, "Empty content.")
             return
 
-        await send_status(task_id, "Embedding hesaplanıyor...")
+        await send_status(task_id, "Computing embeddings...")
         vectors = await asyncio.to_thread(embed_texts_sync, chunks)
 
-        await send_status(task_id, "Qdrant'a yazılıyor...")
+        await send_status(task_id, "Writing to Qdrant...")
         qc = QdrantClient(url=settings.QDRANT_URL, api_key=getattr(settings, "QDRANT_API_KEY", None))
         ensure_collection(qc, settings.QDRANT_COLLECTION, settings.EMBEDDING_DIMENSIONS)
 
         doc_id = document_id or document_url
         payloads: List[Dict[str, Any]] = []
         for i, chunk in enumerate(chunks):
-            payloads.append({
-                "user_id": user_id,
-                "document_id": doc_id,
-                "chunk_index": i,
-                "text": chunk,
-                "source_url": document_url,
-                "created_at": time.time(),
-            })
+            payloads.append(
+                {
+                    "user_id": user_id,
+                    "document_id": doc_id,
+                    "chunk_index": i,
+                    "text": chunk,
+                    "source_url": document_url,
+                    "created_at": time.time(),
+                }
+            )
 
         upsert_points(
             qc,
@@ -105,9 +116,9 @@ async def run_ingest_task(
             document_id=doc_id,
         )
 
-        await send_status(task_id, f"Tamamlandı. {len(chunks)} parça eklendi.")
+        await send_status(task_id, f"Completed. {len(chunks)} chunks added.")
         await send_done(task_id)
     except Exception as e:
-        await send_error(task_id, f"Hata: {e}")
+        await send_error(task_id, f"Error: {e}")
     finally:
         hb.cancel()
