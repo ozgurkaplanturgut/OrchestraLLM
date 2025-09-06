@@ -100,7 +100,7 @@ def embed_texts_sync(
             data = r.json()
             for item in data.get("data", []):
                 out.append(item["embedding"])
-            time.sleep(0.05)  # nazik rate-limit
+            time.sleep(0.05)  # To avoid rate limits
     return out
 
 def embed_query_sync(query: str, *, model: Optional[str] = None) -> List[float]:
