@@ -10,11 +10,13 @@ from orchestrallm.shared.config.settings import settings
 _client: Optional[MongoClient] = None
 _db = None
 
+
 def get_client() -> MongoClient:
     global _client
     if _client is None:
         _client = MongoClient(settings.MONGODB_URI)
     return _client
+
 
 def get_db():
     global _db
@@ -22,7 +24,9 @@ def get_db():
         _db = get_client()[settings.MONGODB_DB]
     return _db
 
+
 def ensure_indexes() -> None:
+    """Create indexes for collections if they do not exist."""
     db = get_db()
     tasks = db.get_collection("tasks")
     streams = db.get_collection("streams")
@@ -36,20 +40,29 @@ def ensure_indexes() -> None:
         if "created_at" not in streams.index_information():
             streams.create_index([("created_at", ASCENDING)], name="created_at")
         if "conv_user_session" not in convs.index_information():
-            convs.create_index([("user_id", ASCENDING), ("session_id", ASCENDING)],
-                               name="conv_user_session", unique=True)
+            convs.create_index(
+                [("user_id", ASCENDING), ("session_id", ASCENDING)],
+                name="conv_user_session",
+                unique=True,
+            )
         if "updated_at" not in convs.index_information():
             convs.create_index([("updated_at", ASCENDING)], name="updated_at")
         if "state_ctx_user_session" not in app_states.index_information():
             app_states.create_index(
-                [("context", ASCENDING), ("user_id", ASCENDING),
-                 ("session_id", ASCENDING), ("updated_at", ASCENDING)],
-                name="state_ctx_user_session"
+                [
+                    ("context", ASCENDING),
+                    ("user_id", ASCENDING),
+                    ("session_id", ASCENDING),
+                    ("updated_at", ASCENDING),
+                ],
+                name="state_ctx_user_session",
             )
     except OperationFailure:
         pass
 
+
 def _next_sequence_for_task(task_id: str) -> int:
+    """Generate the next incremental sequence number for a given task_id."""
     db = get_db()
     doc = db.counters.find_one_and_update(
         {"_id": f"streams:{task_id}"},
@@ -59,16 +72,17 @@ def _next_sequence_for_task(task_id: str) -> int:
     )
     return int(doc.get("seq", 1))
 
+
 def _normalize_event_args(*args, **kwargs) -> Dict[str, Any]:
     """
-    Geriye dönük uyum:
-      - Yeni imza: save_stream_event(event_dict)
-      - Eski imza: save_stream_event(task_id, typ, **fields)
+    Backward compatibility:
+      - New signature: save_stream_event(event_dict)
+      - Old signature: save_stream_event(task_id, typ, **fields)
 
-    DÖNEN dict en az {task_id, type} içerir; kwargs event’e eklenir.
+    Returned dict contains at least {task_id, type}; kwargs are merged into the event.
     """
     if len(args) == 1 and isinstance(args[0], dict):
-        ev = dict(args[0])  
+        ev = dict(args[0])
         if "type" not in ev and "typ" in ev:
             ev["type"] = ev.pop("typ")
         return ev
@@ -88,19 +102,23 @@ def _normalize_event_args(*args, **kwargs) -> Dict[str, Any]:
 
     raise TypeError("save_stream_event: invalid arguments. Use event dict or (task_id, typ, **fields).")
 
+
 def save_stream_event(*args, **kwargs) -> Dict[str, Any]:
     """
-    Event’i 'streams' koleksiyonuna kalıcı yazar.
-    İmza uyumlu: save_stream_event(event_dict) veya save_stream_event(task_id, typ, **fields)
-    Otomatik olarak 'seq' ve 'created_at' eklenir.
+    Persist an event to the 'streams' collection.
+    Compatible signatures:
+      - save_stream_event(event_dict)
+      - save_stream_event(task_id, typ, **fields)
+
+    Automatically adds 'seq' and 'created_at' fields.
     """
     db = get_db()
     ev = _normalize_event_args(*args, **kwargs)
 
     if "task_id" not in ev:
-        raise ValueError("save_stream_event: 'task_id' zorunludur.")
+        raise ValueError("save_stream_event: 'task_id' is required.")
     if "type" not in ev:
-        raise ValueError("save_stream_event: 'type' zorunludur.")
+        raise ValueError("save_stream_event: 'type' is required.")
 
     if "seq" not in ev:
         ev["seq"] = _next_sequence_for_task(ev["task_id"])
