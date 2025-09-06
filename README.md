@@ -72,6 +72,8 @@ curl http://127.0.0.1:8076/health
 
 A successful response will look like `{"ok":true, ...}`.
 
+Also you can reach vector db dashboard via --> "http://localhost:6333/dashboard#/collections"
+
 ## Usage & API Endpoints
 
 All tasks run asynchronously and return a `task_id`. To monitor the results, you need to connect to the `/v1/stream/{task_id}` WebSocket endpoint.
