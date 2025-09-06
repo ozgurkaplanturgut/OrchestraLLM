@@ -66,7 +66,7 @@ async def publish_event_async(event: Any) -> Dict[str, Any]:
     ev = _normalize_event_shape(event)
 
     if "task_id" not in ev or not ev["task_id"]:
-        raise ValueError("publish_event_async: 'task_id' zorunludur.")
+        raise ValueError("publish_event_async: 'task_id' is required in event")
 
     saved = save_stream_event(ev)  
     await EVENT_BUS.publish(saved)  
