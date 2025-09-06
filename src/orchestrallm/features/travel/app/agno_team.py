@@ -5,7 +5,6 @@ from typing import AsyncGenerator, Dict, List
 from orchestrallm.shared.llm.openai_client import stream_chat
 from orchestrallm.shared.websearch.ddg import ddg_search
 from orchestrallm.features.travel.infra.memory import load_last_state, save_travel_state
-from orchestrallm.shared.history import load_history
 from orchestrallm.features.travel.domain.prompts import (TRAVEL_PLANNER_SYSTEM_PROMPT, 
                            TRAVEL_SEARCHER_SYSTEM_PROMPT,  
                            TRAVEL_WRITER_SYSTEM_PROMPT)
@@ -51,9 +50,6 @@ async def stream_travel_plan(
     This function coordinates multiple agents to research, plan, and write a travel itinerary.
     It streams the final written itinerary back as tokens.
     """
-    history_msgs = load_history(user_id=user_id, session_id=session_id, limit=10)
-    history_text = "\n".join([f"- {m.get('role','')}: {str(m.get('content',''))[:200]}" for m in history_msgs])
-
     last_state = load_last_state(user_id=user_id, session_id=session_id) or {}
     current_plan_text = last_state.get("plan_text", "") or ""
     current_final_text = last_state.get("final_text", "") or ""
@@ -65,7 +61,6 @@ async def stream_travel_plan(
     # --- Researcher ---
     researcher_user = _as_str(
         f"USER DEMAND: {query}\n\n"
-        f"[HISTORY]\n{history_text}\n\n"
         f"[CURRENT PLAN]\n{current_plan_text if has_current else '(yok)'}\n\n"
         f"[SEARCH RESULTS]\n{search_json}"
     )
@@ -74,7 +69,6 @@ async def stream_travel_plan(
     # --- Planner ---
     planner_user = _as_str(
         f"USER DEMAND: {query}\n\n"
-        f"[HISTORY]\n{history_text}\n\n"
         f"[CURRENT PLAN]\n{current_plan_text if has_current else '(yok)'}\n\n"
         f"[SEARCH RESULTS]\n{research_text}"
     )
@@ -94,6 +88,7 @@ async def stream_travel_plan(
             final_buf.append(tok)
             yield tok
     final_text = "".join(final_buf).strip()
+
 
     save_travel_state(
         user_id=user_id,
