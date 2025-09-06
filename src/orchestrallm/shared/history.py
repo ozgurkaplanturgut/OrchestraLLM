@@ -13,9 +13,8 @@ from orchestrallm.shared.persistence.mongo import get_db
 MONGO_URI: str = getattr(settings, "MONGODB_URI", "mongodb://localhost:27017")
 MONGO_DB: str = getattr(settings, "MONGODB_DB", "ragchat")
 COLL_NAME: str = getattr(settings, "CONVERSATIONS_COLLECTION", "conversations")
-MAX_MESSAGES: int = int(getattr(settings, "HISTORY_MAX_MESSAGES", 200) or 200)
+MAX_MESSAGES: int = getattr(settings, "HISTORY_MAX_MESSAGES", 200)
 
-_client: Optional[MongoClient] = None
 _coll: Optional[Collection] = None
 
 
