@@ -5,7 +5,7 @@ import json
 from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 
-from orchestrallm.shared.eventbus.events import EVENT_BUS, publish_event_async
+from orchestrallm.shared.eventbus.events import EVENT_BUS
 from orchestrallm.shared.persistence.mongo import get_db
 
 router = APIRouter(tags=["stream"])
