@@ -54,7 +54,7 @@ def fetch_text(url: str, *, timeout: int = 20) -> str:
 
 def _is_turkish(s: str) -> bool:
     """
-    Basit Türkçe tespiti: ç,ğ,ı,ö,ş,ü karakterlerinden biri veya "tarif"/"yemek" kelimeleri.
+    Basically checks if the string contains Turkish-specific characters or words.
     """
     ls = s.lower()
     return bool(re.search(r"[çğıöşü]", ls)) or "tarif" in ls or "yemek" in ls
