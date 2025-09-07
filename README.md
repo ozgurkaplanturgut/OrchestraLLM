@@ -100,12 +100,12 @@ The project includes an end-to-end test script (`test_project.py`) that covers a
 
 2.  **Configure the test script:**
 
-    The script contains several test scenarios inside the `main()` function, which are commented out by default. To run a specific scenario, open `test.py` and uncomment the corresponding lines.
+    The script contains several test scenarios inside the `main()` function, which are commented out by default. To run a specific scenario, open `test_project.py` and uncomment the corresponding lines.
 
-    For example, to run only the **Chat** test, modify the `main()` function at the bottom of `test.py` as follows:
+    For example, to run only the **Chat** test, modify the `main()` function at the bottom of `test_project.py` as follows:
 
     ```python
-    # test.py
+    # test_project.py
 
     def main():
         # ... (parser code)
@@ -136,7 +136,7 @@ The project includes an end-to-end test script (`test_project.py`) that covers a
     In a separate terminal (while the API is running), execute the script:
 
     ```sh
-    python3 test.py
+    python3 test_project.py
     ```
 
     You will see the task progress and the live-streamed responses from the LLM directly in your terminal.
